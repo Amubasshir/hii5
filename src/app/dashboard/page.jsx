@@ -159,13 +159,12 @@ const DashboardPage = () => {
                 console.error('Logout error:', err);
               }
             }}
-            className="font-medium flex items-center gap-3 px-5 py-3 mt-2 text-white rounded-lg transition 
-  bg-[linear-gradient(135deg,rgba(255,0,80,0.9),rgba(255,70,200,0.9),rgba(70,120,255,0.9))]
-  hover:bg-[linear-gradient(135deg,rgba(255,0,80,1),rgba(255,70,200,1),rgba(70,120,255,1))]
-  shadow-[0_0_20px_rgba(255,70,200,0.4)]"
+            className="relative inline-block rounded-full p-[3px] bg-gradient-to-r from-[rgba(255,0,150,0.8)] via-[rgba(128,0,255,0.8)] to-[rgba(0,200,255,0.8)]"
           >
-            <FiLogOut size={'20px'} />
-            <span>Logout</span>
+            <span className="block bg-black text-white px-8 py-3 rounded-full font-semibold transition duration-200 flex items-center gap-3 cursor-pointer">
+              <FiLogOut size={'20px'} />
+              Logout
+            </span>
           </button>
         </div>
       </header>
