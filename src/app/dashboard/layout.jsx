@@ -1,15 +1,16 @@
-// app/layout.jsx (or wherever your root layout is)
-import React from 'react';
-
-import '../globals.css';
+// app/layout.jsx (or src/app/layout.jsx)
 
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
-      <head>
-        <title>Dashboard</title>
-      </head>
-      <body className="bg-[#0B0A13] text-white">{children}</body>
+      <head>{/* Head elements like fonts, viewport, etc. */}</head>
+      {/* ✅ THE FIX: Add suppressHydrationWarning to the <body> element.
+        This tells React to ignore the difference between the server-rendered
+        and client-hydrated attributes on this specific tag.
+      */}
+      <body className="bg-[#0B0A13] text-white" suppressHydrationWarning={true}>
+        {children}
+      </body>
     </html>
   );
 }
