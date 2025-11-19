@@ -23,7 +23,7 @@ export default function TradingPromo({
             {title}
           </h1>
 
-          <p className="text-slate-300 max-w-[30rem] mx-auto md:mx-0 mb-8 text-base sm:text-lg md:text-[18px]">
+          <p className="text-slate-300 max-w-[480px] mx-auto md:mx-0 mb-8 text-base sm:text-lg md:text-[18px]">
             {subtitle}
           </p>
 
