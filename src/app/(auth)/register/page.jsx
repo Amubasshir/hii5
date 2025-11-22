@@ -12,6 +12,7 @@ const supabase = createBrowserClient(
 
 export default function RegisterPage() {
   const router = useRouter();
+
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -48,19 +49,19 @@ export default function RegisterPage() {
     }
 
     // 2️⃣ Add user to your table
-    const { error: tableError } = await supabase.from('users').insert([
-      {
-        full_name: name,
-        email: email,
-      },
-    ]);
+    // const { error: tableError } = await supabase.from('users').insert([
+    //   {
+    //     full_name: name,
+    //     email: email,
+    //   },
+    // ]);
 
-    if (tableError) {
-      setError(
-        'User registered but failed to add to table: ' + tableError.message
-      );
-      return;
-    }
+    // if (tableError) {
+    //   setError(
+    //     'User registered but failed to add to table: ' + tableError.message
+    //   );
+    //   return;
+    // }
 
     // Show message to check email
     setError(

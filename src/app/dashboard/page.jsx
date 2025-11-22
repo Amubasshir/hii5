@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import QRCode from 'react-qr-code';
 import { createClient } from '@supabase/supabase-js';
 import '../globals.css';
+import { useCurrentUser } from '@/contexts/CurrentUserContext';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -130,6 +131,7 @@ const UpgradeCard = () => (
 // -------------------
 const DashboardPage = () => {
   const [businessName, setBusinessName] = useState('');
+  const { userData, loading:userLoading, error: usersError, refresh } = useCurrentUser();
   const [slug, setSlug] = useState('');
   const [logoName, setLogoName] = useState('No file chosen');
   const [logoUrl, setLogoUrl] = useState('');
@@ -162,7 +164,7 @@ const DashboardPage = () => {
   useEffect(() => {
     const s = generateSlug();
     setSlug(s);
-    setReviewLink(`https://hii5.io/${s}`);
+    setReviewLink(`https://hii5.io/reivew/${s}`);
   }, []);
 
   const handleLogoChange = async e => {
@@ -218,18 +220,41 @@ const DashboardPage = () => {
       logo_url: logoUrl || null,
       google_url: googleURL || null,
       yelp_url: yelpURL || null,
+      created_by: userData?.id || null,
     };
 
+    let error = null;
+
+    const { data: existingBusiness } = await supabase
+  .from('businesses')
+  .select('created_by')
+  .eq('created_by', userData?.id)  // Only find businesses created by this user
+  .single();
+
+if (existingBusiness) {
+  // Update existing business (user owns it)
+  const { error } = await supabase
+    .from('businesses')
+    .update(formData)
+    .eq('created_by', userData?.id);  // Double security check
+    error = error;
+} else {
+    // Insert new business
     const { error } = await supabase
-      .from('businesses') // ✅ use the correct table
-      .upsert(formData, { onConflict: ['slug'] });
+    .from('businesses')
+    .insert([{ ...formData, created_by: userData?.id }]);
+    error = error;
+}
+    // const { error } = await supabase
+    //   .from('businesses') 
+    //   .upsert(formData, { onConflict: ['slug'] });
 
     if (error) {
       console.error('Supabase upsert error:', error);
       return showMessage('Failed to save settings', true);
     }
 
-    setReviewLink(`https://hii5.io/${slug}`);
+    setReviewLink(`https://hii5.io/review/${slug}`);
     showMessage('Settings saved successfully!');
     await fetchAnalytics();
   };
