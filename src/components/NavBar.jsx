@@ -1,9 +1,9 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { createBrowserClient } from '@supabase/ssr';
 import { Menu, X } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { createBrowserClient } from '@supabase/ssr';
+import { useEffect, useState } from 'react';
 
 const supabase = createBrowserClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -35,11 +35,7 @@ export default function Navbar() {
       <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between relative">
         {/* Left: Logo */}
         <div className="flex items-center gap-2 text-4xl font-semibold">
-          <img
-            src="https://cdn.prod.website-files.com/61113c4e9f23df1e7f554117/612bc71c644420792634e5a4_logo-dark-template.svg"
-            alt=""
-            className="w-[130px]"
-          />
+          <img src="/hii5logo.png" alt="Hii5 logo" className="w-[100px]" />
         </div>
 
         {/* Center: Medium Devices - Cart + Sign in */}

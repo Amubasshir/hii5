@@ -1,10 +1,11 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import QRCode from 'react-qr-code';
-import { createClient } from '@supabase/supabase-js';
-import '../globals.css';
 import { useCurrentUser } from '@/contexts/CurrentUserContext';
+import { createClient } from '@supabase/supabase-js';
+import Link from 'next/link';
+import { useEffect, useState } from 'react';
+import QRCode from 'react-qr-code';
+import '../globals.css';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -14,7 +15,7 @@ const supabase = createClient(
 // -------------------
 // Icon Components
 // -------------------
-const LogOutIcon = props => (
+const LogOutIcon = (props) => (
   <svg
     {...props}
     xmlns="http://www.w3.org/2000/svg"
@@ -32,7 +33,7 @@ const LogOutIcon = props => (
   </svg>
 );
 
-const HandPaperIcon = props => (
+const HandPaperIcon = (props) => (
   <svg
     {...props}
     xmlns="http://www.w3.org/2000/svg"
@@ -50,7 +51,7 @@ const HandPaperIcon = props => (
   </svg>
 );
 
-const CopyIcon = props => (
+const CopyIcon = (props) => (
   <svg
     {...props}
     xmlns="http://www.w3.org/2000/svg"
@@ -131,8 +132,13 @@ const UpgradeCard = () => (
 // -------------------
 const DashboardPage = () => {
   const [businessName, setBusinessName] = useState('');
-  const { userData, loading:userLoading, error: usersError, refresh } = useCurrentUser();
-    const [businesses, setBusinesses] = useState(null);
+  const {
+    userData,
+    loading: userLoading,
+    error: usersError,
+    refresh,
+  } = useCurrentUser();
+  const [businesses, setBusinesses] = useState(null);
   const [slug, setSlug] = useState('');
   const [logoName, setLogoName] = useState('No file chosen');
   const [logoUrl, setLogoUrl] = useState('');
@@ -165,41 +171,42 @@ const DashboardPage = () => {
   };
 
   const handleGenerateAnalytics = (reviews) => {
-        if (!reviews || reviews.length === 0) return;
+    if (!reviews || reviews.length === 0) return;
 
-  const total = reviews.length;
+    const total = reviews.length;
 
-  const positive = reviews.filter(r => r.rating >= 4).length;
+    const positive = reviews.filter((r) => r.rating >= 4).length;
 
-  // PRIVATE = rating < 4
-  const privateCount = reviews.filter(r => r.rating < 4).length;
+    // PRIVATE = rating < 4
+    const privateCount = reviews.filter((r) => r.rating < 4).length;
 
-  // average rating
-  const avgRating =
-    total > 0 ? (reviews.reduce((sum, r) => sum + r.rating, 0) / total).toFixed(1) : "0.0";
+    // average rating
+    const avgRating =
+      total > 0
+        ? (reviews.reduce((sum, r) => sum + r.rating, 0) / total).toFixed(1)
+        : '0.0';
 
-  // last 7 days analytics
-  const today = new Date();
-  const last7Days = Array(7).fill(0);
+    // last 7 days analytics
+    const today = new Date();
+    const last7Days = Array(7).fill(0);
 
-  reviews.forEach((review) => {
-    const reviewDate = new Date(review.created_at);
-    const diffDays = Math.floor((today - reviewDate) / (1000 * 60 * 60 * 24));
+    reviews.forEach((review) => {
+      const reviewDate = new Date(review.created_at);
+      const diffDays = Math.floor((today - reviewDate) / (1000 * 60 * 60 * 24));
 
-    if (diffDays >= 0 && diffDays < 7) {
-      last7Days[6 - diffDays] += 1;
-    }
-  });
+      if (diffDays >= 0 && diffDays < 7) {
+        last7Days[6 - diffDays] += 1;
+      }
+    });
 
-  setAnalytics({
-    positive,
-    private: privateCount,
-    total,
-    avgRating,
-    last7Days,
-  });
-
-  }
+    setAnalytics({
+      positive,
+      private: privateCount,
+      total,
+      avgRating,
+      last7Days,
+    });
+  };
 
   useEffect(() => {
     const s = generateSlug();
@@ -207,69 +214,66 @@ const DashboardPage = () => {
     setReviewLink(`https://hii5.io/reivew/${s}`);
   }, []);
 
-
-    useEffect(() => {
+  useEffect(() => {
     const fetchBusinesses = async () => {
-    //   setLoading(true);
+      //   setLoading(true);
 
       const { data, error } = await supabase
-        .from("businesses")
-        .select("*")
-        .eq("created_by", userData?.id).single();
+        .from('businesses')
+        .select('*')
+        .eq('created_by', userData?.id)
+        .single();
 
       if (error) {
-        console.error("Error fetching:", error);
+        console.error('Error fetching:', error);
       } else {
         setBusinesses(data);
-        setBusinessName(data.business_name);   // field → state
+        setBusinessName(data.business_name); // field → state
         setSlug(data.slug);
-        setLogoUrl(data.logo_url ?? "");
-        setLogoName(data.logo_url ? "Uploaded" : "No file chosen");
-        setBrandColor(data.brand_color || "#FF007F");
-        setGoogleURL(data.google_url || "");
-        setYelpURL(data.yelp_url || "");   
+        setLogoUrl(data.logo_url ?? '');
+        setLogoName(data.logo_url ? 'Uploaded' : 'No file chosen');
+        setBrandColor(data.brand_color || '#FF007F');
+        setGoogleURL(data.google_url || '');
+        setYelpURL(data.yelp_url || '');
         const baseUrl = window.location.origin;
-        setReviewLink(`${baseUrl}/review/${data.slug}`);     
+        setReviewLink(`${baseUrl}/review/${data.slug}`);
       }
 
-    //   setLoading(false);
+      //   setLoading(false);
     };
 
-    if(userData?.id){
-        fetchBusinesses();
+    if (userData?.id) {
+      fetchBusinesses();
     }
   }, [userData]);
 
   useEffect(() => {
     const fetchReviews = async () => {
-    //   setLoading(true);
+      //   setLoading(true);
 
       const { data, error } = await supabase
-        .from("reviews")
-        .select("*")
-        .eq("company_id", businesses?.id)
-        .order("id", { ascending: false });
-
+        .from('reviews')
+        .select('*')
+        .eq('company_id', businesses?.id)
+        .order('id', { ascending: false });
 
       if (error) {
-        console.error("Error fetching:", error);
+        console.error('Error fetching:', error);
       } else {
-
-        console.log("Fetched reviews:", data);
+        console.log('Fetched reviews:', data);
         // setReviews(data);
         handleGenerateAnalytics(data);
       }
 
-    //   setLoading(false);
+      //   setLoading(false);
     };
 
-    if(businesses?.id){
-        fetchReviews();
+    if (businesses?.id) {
+      fetchReviews();
     }
   }, [businesses]);
 
-
-  const handleLogoChange = async e => {
+  const handleLogoChange = async (e) => {
     if (!e.target.files.length) return;
     const file = e.target.files[0];
     const fileName = `${slug}-${file.name}`;
@@ -295,8 +299,8 @@ const DashboardPage = () => {
     if (error) return console.error(error);
 
     const total = reviews.length;
-    const positive = reviews.filter(r => r.rating >= 4).length;
-    const privateFeedback = reviews.filter(r => r.rating < 4).length;
+    const positive = reviews.filter((r) => r.rating >= 4).length;
+    const privateFeedback = reviews.filter((r) => r.rating < 4).length;
     const avgRating = total
       ? (reviews.reduce((a, r) => a + r.rating, 0) / total).toFixed(1)
       : '0.0';
@@ -310,7 +314,7 @@ const DashboardPage = () => {
     });
   };
 
-  const submitHandler = async e => {
+  const submitHandler = async (e) => {
     e.preventDefault();
     // const googleURL = e.target.googleURL.value;
     // const yelpURL = e.target.yelpURL.value;
@@ -326,54 +330,63 @@ const DashboardPage = () => {
     };
 
     let currentError = null;
-    let currentBusiness = {...businesses} || null;
+    let currentBusiness = { ...businesses } || null;
 
-//     const { data: existingBusiness } = await supabase
-//   .from('businesses')
-//   .select('created_by')
-//   .eq('created_by', userData?.id)  // Only find businesses created by this user
-//   .single();
+    //     const { data: existingBusiness } = await supabase
+    //   .from('businesses')
+    //   .select('created_by')
+    //   .eq('created_by', userData?.id)  // Only find businesses created by this user
+    //   .single();
 
-if (currentBusiness) {
-  // Update existing business (user owns it)
-  const { error } = await supabase
-    .from('businesses')
-    .update(formData)
-    .eq('created_by', userData?.id);  // Double security check
-    currentError = error;
-} else {
-    // Insert new business
-    const { data, error } = await supabase
-    .from('businesses')
-    .insert([{ ...formData, created_by: userData?.id }]).single();
-    currentError = error;
-    // currentBusiness = data;
-}
+    if (currentBusiness) {
+      // Update existing business (user owns it)
+      const { error } = await supabase
+        .from('businesses')
+        .update(formData)
+        .eq('created_by', userData?.id); // Double security check
+      currentError = error;
+    } else {
+      // Insert new business
+      const { data, error } = await supabase
+        .from('businesses')
+        .insert([{ ...formData, created_by: userData?.id }])
+        .single();
+      currentError = error;
+      // currentBusiness = data;
+    }
     if (currentError) {
       console.error('Supabase upsert error:', currentError);
       return showMessage('Failed to save settings', true);
     }
 
-    console.log({currentBusiness})
-    
+    console.log({ currentBusiness });
+
     if (!currentBusiness) {
       console.error('No business data available after upsert.');
       return showMessage('Failed to save settings', true);
     }
     const { data: contactInfoData, error: contactInfoError } = await supabase
-    .from('reviews_contact_info')
-    .upsert({ slug: formData.slug, company_id: currentBusiness.id, email: userData?.email, google_url: formData?.google_url }, {onConflict: "company_id"});
+      .from('reviews_contact_info')
+      .upsert(
+        {
+          slug: formData.slug,
+          company_id: currentBusiness.id,
+          email: userData?.email,
+          google_url: formData?.google_url,
+        },
+        { onConflict: 'company_id' }
+      );
 
-    if(contactInfoError){
-        console.error('Contact Info insert error:', contactInfoError);
-        return showMessage('Failed to save settings', true);
+    if (contactInfoError) {
+      console.error('Contact Info insert error:', contactInfoError);
+      return showMessage('Failed to save settings', true);
     }
 
-    console.log({contactInfoData})
+    console.log({ contactInfoData });
 
     // please take current base url from browser
     const baseUrl = window.location.origin;
-    
+
     setReviewLink(`${baseUrl}/review/${slug}`);
     showMessage('Settings saved successfully!');
     // await fetchAnalytics();
@@ -401,14 +414,10 @@ if (currentBusiness) {
 
       {/* HEADER */}
       <header className="border-b border-gray-700 bg-gray-800 shadow-md">
-        <div className="max-w-7xl mx-auto flex items-center justify-between px-4 py-4">
-          <a
-            href="/"
-            className="text-3xl text-pink-500 font-extrabold flex items-center gap-2"
-          >
-            <HandPaperIcon />
-            Hii5.io
-          </a>
+        <div className="max-w-7xl mx-auto flex items-center justify-between px-4 py-1">
+          <Link href="/">
+            <img src="/hii5logo.png" alt="Hii5 logo" className="w-[60px]" />
+          </Link>
           <button
             onClick={logoutHandler}
             className="rounded-full p-2 bg-gradient-to-r from-pink-500 to-purple-500 flex items-center gap-3"
@@ -464,7 +473,7 @@ if (currentBusiness) {
               <input
                 type="text"
                 value={businessName}
-                onChange={e => setBusinessName(e.target.value)}
+                onChange={(e) => setBusinessName(e.target.value)}
                 className="mt-1 block w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-sm text-white"
               />
             </div>
@@ -534,13 +543,13 @@ if (currentBusiness) {
               <input
                 type="color"
                 value={brandColor}
-                onChange={e => setBrandColor(e.target.value)}
+                onChange={(e) => setBrandColor(e.target.value)}
                 className="w-12 h-12 rounded-full cursor-pointer"
               />
               <input
                 type="text"
                 value={brandColor}
-                onChange={e => setBrandColor(e.target.value)}
+                onChange={(e) => setBrandColor(e.target.value)}
                 className="w-32 bg-gray-700 border border-gray-600 rounded-lg p-3 text-sm text-white font-mono"
               />
             </div>

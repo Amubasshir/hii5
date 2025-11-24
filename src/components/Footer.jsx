@@ -1,12 +1,11 @@
 'use client'; // ✅ Make this a client component
 
-import React from 'react';
 import {
-  FaFacebookF,
-  FaTwitter,
-  FaLinkedinIn,
-  FaInstagram,
   FaDribbble,
+  FaFacebookF,
+  FaInstagram,
+  FaLinkedinIn,
+  FaTwitter,
   FaWhatsapp,
 } from 'react-icons/fa';
 
@@ -158,10 +157,7 @@ const Footer = () => {
       {/* Bottom Bar */}
       <div className="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center pt-6 text-xs mt-4">
         <div className="flex items-center text-white font-bold text-lg mb-4 md:mb-0">
-          <img
-            src="https://cdn.prod.website-files.com/61113c4e9f23df1e7f554117/612bc71c644420792634e5a4_logo-dark-template.svg"
-            alt=""
-          />
+          <img src="/hii5logo.png" alt="Hii5 logo" className="w-[70px]" />
         </div>
         <div className="text-center md:text-right">
           Copyright &copy; Dark X | Designed by{' '}
