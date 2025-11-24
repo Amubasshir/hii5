@@ -1,6 +1,7 @@
 // app/layout.jsx (or src/app/layout.jsx)
 
 import { CurrentUserProvider } from "@/contexts/CurrentUserContext";
+import { Toaster } from "react-hot-toast";
 
 export default function RootLayout({ children }) {
   return (
@@ -11,9 +12,9 @@ export default function RootLayout({ children }) {
         and client-hydrated attributes on this specific tag.
       */}
       <body className="bg-[#0B0A13] text-white" suppressHydrationWarning={true}>
-      
       <CurrentUserProvider>
         {children}
+        <Toaster />
       </CurrentUserProvider>
         
       </body>

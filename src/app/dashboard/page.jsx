@@ -132,9 +132,12 @@ const UpgradeCard = () => (
 const DashboardPage = () => {
   const [businessName, setBusinessName] = useState('');
   const { userData, loading:userLoading, error: usersError, refresh } = useCurrentUser();
+    const [businesses, setBusinesses] = useState(null);
   const [slug, setSlug] = useState('');
   const [logoName, setLogoName] = useState('No file chosen');
   const [logoUrl, setLogoUrl] = useState('');
+  const [googleURL, setGoogleURL] = useState('');
+  const [yelpURL, setYelpURL] = useState('');
   const [brandColor, setBrandColor] = useState('#FF007f');
   const [reviewLink, setReviewLink] = useState('');
   const [analytics, setAnalytics] = useState({
@@ -161,11 +164,110 @@ const DashboardPage = () => {
       .join('');
   };
 
+  const handleGenerateAnalytics = (reviews) => {
+        if (!reviews || reviews.length === 0) return;
+
+  const total = reviews.length;
+
+  const positive = reviews.filter(r => r.rating >= 4).length;
+
+  // PRIVATE = rating < 4
+  const privateCount = reviews.filter(r => r.rating < 4).length;
+
+  // average rating
+  const avgRating =
+    total > 0 ? (reviews.reduce((sum, r) => sum + r.rating, 0) / total).toFixed(1) : "0.0";
+
+  // last 7 days analytics
+  const today = new Date();
+  const last7Days = Array(7).fill(0);
+
+  reviews.forEach((review) => {
+    const reviewDate = new Date(review.created_at);
+    const diffDays = Math.floor((today - reviewDate) / (1000 * 60 * 60 * 24));
+
+    if (diffDays >= 0 && diffDays < 7) {
+      last7Days[6 - diffDays] += 1;
+    }
+  });
+
+  setAnalytics({
+    positive,
+    private: privateCount,
+    total,
+    avgRating,
+    last7Days,
+  });
+
+  }
+
   useEffect(() => {
     const s = generateSlug();
     setSlug(s);
     setReviewLink(`https://hii5.io/reivew/${s}`);
   }, []);
+
+
+    useEffect(() => {
+    const fetchBusinesses = async () => {
+    //   setLoading(true);
+
+      const { data, error } = await supabase
+        .from("businesses")
+        .select("*")
+        .eq("created_by", userData?.id).single();
+
+      if (error) {
+        console.error("Error fetching:", error);
+      } else {
+        setBusinesses(data);
+        setBusinessName(data.business_name);   // field → state
+        setSlug(data.slug);
+        setLogoUrl(data.logo_url ?? "");
+        setLogoName(data.logo_url ? "Uploaded" : "No file chosen");
+        setBrandColor(data.brand_color || "#FF007F");
+        setGoogleURL(data.google_url || "");
+        setYelpURL(data.yelp_url || "");   
+        const baseUrl = window.location.origin;
+        setReviewLink(`${baseUrl}/review/${data.slug}`);     
+      }
+
+    //   setLoading(false);
+    };
+
+    if(userData?.id){
+        fetchBusinesses();
+    }
+  }, [userData]);
+
+  useEffect(() => {
+    const fetchReviews = async () => {
+    //   setLoading(true);
+
+      const { data, error } = await supabase
+        .from("reviews")
+        .select("*")
+        .eq("company_id", businesses?.id)
+        .order("id", { ascending: false });
+
+
+      if (error) {
+        console.error("Error fetching:", error);
+      } else {
+
+        console.log("Fetched reviews:", data);
+        // setReviews(data);
+        handleGenerateAnalytics(data);
+      }
+
+    //   setLoading(false);
+    };
+
+    if(businesses?.id){
+        fetchReviews();
+    }
+  }, [businesses]);
+
 
   const handleLogoChange = async e => {
     if (!e.target.files.length) return;
@@ -210,8 +312,8 @@ const DashboardPage = () => {
 
   const submitHandler = async e => {
     e.preventDefault();
-    const googleURL = e.target.googleURL.value;
-    const yelpURL = e.target.yelpURL.value;
+    // const googleURL = e.target.googleURL.value;
+    // const yelpURL = e.target.yelpURL.value;
 
     const formData = {
       business_name: businessName || 'Unnamed Business',
@@ -223,40 +325,58 @@ const DashboardPage = () => {
       created_by: userData?.id || null,
     };
 
-    let error = null;
+    let currentError = null;
+    let currentBusiness = {...businesses} || null;
 
-    const { data: existingBusiness } = await supabase
-  .from('businesses')
-  .select('created_by')
-  .eq('created_by', userData?.id)  // Only find businesses created by this user
-  .single();
+//     const { data: existingBusiness } = await supabase
+//   .from('businesses')
+//   .select('created_by')
+//   .eq('created_by', userData?.id)  // Only find businesses created by this user
+//   .single();
 
-if (existingBusiness) {
+if (currentBusiness) {
   // Update existing business (user owns it)
   const { error } = await supabase
     .from('businesses')
     .update(formData)
     .eq('created_by', userData?.id);  // Double security check
-    error = error;
+    currentError = error;
 } else {
     // Insert new business
-    const { error } = await supabase
+    const { data, error } = await supabase
     .from('businesses')
-    .insert([{ ...formData, created_by: userData?.id }]);
-    error = error;
+    .insert([{ ...formData, created_by: userData?.id }]).single();
+    currentError = error;
+    // currentBusiness = data;
 }
-    // const { error } = await supabase
-    //   .from('businesses') 
-    //   .upsert(formData, { onConflict: ['slug'] });
-
-    if (error) {
-      console.error('Supabase upsert error:', error);
+    if (currentError) {
+      console.error('Supabase upsert error:', currentError);
       return showMessage('Failed to save settings', true);
     }
 
-    setReviewLink(`https://hii5.io/review/${slug}`);
+    console.log({currentBusiness})
+    
+    if (!currentBusiness) {
+      console.error('No business data available after upsert.');
+      return showMessage('Failed to save settings', true);
+    }
+    const { data: contactInfoData, error: contactInfoError } = await supabase
+    .from('reviews_contact_info')
+    .upsert({ slug: formData.slug, company_id: currentBusiness.id, email: userData?.email, google_url: formData?.google_url }, {onConflict: "company_id"});
+
+    if(contactInfoError){
+        console.error('Contact Info insert error:', contactInfoError);
+        return showMessage('Failed to save settings', true);
+    }
+
+    console.log({contactInfoData})
+
+    // please take current base url from browser
+    const baseUrl = window.location.origin;
+    
+    setReviewLink(`${baseUrl}/review/${slug}`);
     showMessage('Settings saved successfully!');
-    await fetchAnalytics();
+    // await fetchAnalytics();
   };
 
   const logoutHandler = async () => {
@@ -389,6 +509,8 @@ if (existingBusiness) {
               <input
                 type="url"
                 name="googleURL"
+                value={googleURL}
+                onChange={(e) => setGoogleURL(e.target.value)}
                 placeholder="https://g.page/your-business/review"
                 className="mt-1 block w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-sm text-white"
               />
@@ -400,6 +522,8 @@ if (existingBusiness) {
               <input
                 type="url"
                 name="yelpURL"
+                value={yelpURL}
+                onChange={(e) => setYelpURL(e.target.value)}
                 placeholder="https://yelp.com/biz/your-business"
                 className="mt-1 block w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-sm text-white"
               />
@@ -475,7 +599,7 @@ if (existingBusiness) {
                 subtitle="out of 5.0"
               />
               <StatCard
-                title="Positive Routes"
+                title="Positive Feedbacks"
                 value={analytics.positive}
                 subtitle="4-5 stars (Public)"
               />

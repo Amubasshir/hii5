@@ -145,11 +145,12 @@
 
 "use client"
 
-import { useState } from 'react';
-import { Star } from 'lucide-react';
-import { createBrowserClient } from '@supabase/ssr';
 import { useCurrentUser } from '@/contexts/CurrentUserContext';
-import { useSearchParams } from 'next/navigation';
+import { createBrowserClient } from '@supabase/ssr';
+import { Star } from 'lucide-react';
+import { useParams, useRouter } from 'next/navigation';
+import { useState } from 'react';
+import toast from 'react-hot-toast';
 
 const supabase = createBrowserClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -158,8 +159,8 @@ const supabase = createBrowserClient(
 
 export default function ReviewPage() {
     const { userData, loading, error, refresh } = useCurrentUser();
-    const searchParams = useSearchParams();
-    const myQueryParam = searchParams.get('cid');
+    const params = useParams();
+    const router = useRouter();
 
   const [rating, setRating] = useState(0);
   const [hoverRating, setHoverRating] = useState(0);
@@ -167,8 +168,30 @@ export default function ReviewPage() {
   const [submitted, setSubmitted] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState('');
+//   const [contactInfo, setContactInfo] = useState(null);
 
-  console.log({myQueryParam})
+//   useEffect(() => {
+//     const fetchInfo = async () => {
+//         const { data, error } = await supabase
+//         .from('reviews_contact_info')
+//         .select('slug, email, google_url')
+//         .eq('slug', params.slug)
+//         .single();
+
+//         if(error) {
+//             console.error('Error fetching contact info:', error);
+//             return;
+//         }
+
+//         setContactInfo(data);
+        
+//     }
+
+//     if(params.slug) {
+//         fetchInfo();
+//     }
+//   }, [params.slug])
+
   const handleSubmit = async () => {
     if (rating === 0) {
       alert('Please select a rating');
@@ -178,7 +201,7 @@ export default function ReviewPage() {
       alert('Please write a review');
       return;
     }
-    if (myQueryParam.trim() === '') {
+    if (!params?.slug) {
       alert('Please provide a company ID');
       return;
     }
@@ -190,9 +213,20 @@ export default function ReviewPage() {
         body: JSON.stringify({
           rating: rating,
           review_text: review.trim(),
-          company_id: myQueryParam || null,
+          slug: params.slug || null,
         }),
         })
+
+        if(data?.data?.public_link) {
+            console.log('Review submitted successfully:', data);
+            // redirect to new page link with _blank page
+            window.open(data?.data?.public_link, '_blank');
+
+            // router.push('/thank-you');
+        }
+
+        toast.success(data?.message)
+        
       // Call the Edge Function
     //   const response = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/submit-review`, {
     //     method: 'POST',
@@ -211,7 +245,7 @@ export default function ReviewPage() {
     //   const result = await response.json();
 
     //   if (!response.ok) {
-      if (!error) {
+      if (error) {
         throw new Error(error || 'Failed to submit review');
       }
 
