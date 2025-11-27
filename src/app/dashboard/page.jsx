@@ -557,7 +557,7 @@ const DashboardPage = () => {
             <button
               type="submit"
               style={{ backgroundColor: brandColor }}
-              className="w-full mt-4 py-3 text-white font-bold rounded-lg hover:opacity-90 transition duration-200 shadow-lg"
+              className="w-full mt-4 py-3 text-white cursor-pointer font-bold rounded-lg hover:opacity-90 transition duration-200 shadow-lg"
             >
               Save Settings
             </button>

@@ -1,9 +1,9 @@
 'use client';
 
+import { createBrowserClient } from '@supabase/ssr';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { FcGoogle } from 'react-icons/fc';
-import { createBrowserClient } from '@supabase/ssr';
 import '../../globals.css';
 
 const supabase = createBrowserClient(
@@ -18,7 +18,7 @@ export default function LoginPage() {
   const [error, setError] = useState('');
 
   // ---------- Email/Password Login ----------
-  const handleLogin = async e => {
+  const handleLogin = async (e) => {
     e.preventDefault();
 
     if (!email.trim() || !password.trim()) {
@@ -57,10 +57,7 @@ export default function LoginPage() {
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
         <div className="text-center">
           <div className="flex justify-center items-center space-x-2 text-2xl font-bold mb-2">
-            <span role="img" aria-label="waving hand" className="text-3xl">
-              👋
-            </span>
-            <span>Hii5.io</span>
+            <img src="/hii5logo.png" alt="Hii5 logo" className="w-20 h-20" />
           </div>
           <h2 className="mt-6 text-3xl font-extrabold">Welcome back</h2>
           <p className="mt-2 text-sm">Sign in to access your dashboard</p>
@@ -76,7 +73,7 @@ export default function LoginPage() {
                 id="email"
                 type="email"
                 value={email}
-                onChange={e => {
+                onChange={(e) => {
                   setEmail(e.target.value);
                   setError('');
                 }}
@@ -94,7 +91,7 @@ export default function LoginPage() {
                 id="password"
                 type="password"
                 value={password}
-                onChange={e => {
+                onChange={(e) => {
                   setPassword(e.target.value);
                   setError('');
                 }}
@@ -108,7 +105,7 @@ export default function LoginPage() {
 
             <button
               type="submit"
-              className="w-full py-3 mt-2 text-white font-medium rounded-lg transition
+              className="w-full py-3 mt-2 cursor-pointer text-white font-medium rounded-lg transition
                 bg-[linear-gradient(135deg,rgba(255,0,80,0.9),rgba(255,70,200,0.9),rgba(70,120,255,0.9))]
                 hover:bg-[linear-gradient(135deg,rgba(255,0,80,1),rgba(255,70,200,1),rgba(70,120,255,1))]
                 shadow-[0_0_20px_rgba(255,70,200,0.4)]"
@@ -119,7 +116,7 @@ export default function LoginPage() {
             <button
               type="button"
               onClick={handleGoogleLogin}
-              className="w-full mt-4 flex items-center justify-center gap-3 border border-gray-600 py-3 rounded-lg hover:bg-white/5 transition"
+              className="w-full mt-4 flex items-center justify-center gap-3 border cursor-pointer  border-gray-600 py-3 rounded-lg hover:bg-white/5 transition"
             >
               <FcGoogle size={30} />
               Continue with Google
@@ -139,5 +136,3 @@ export default function LoginPage() {
     </div>
   );
 }
-
-
