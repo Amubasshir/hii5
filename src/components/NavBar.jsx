@@ -12,7 +12,6 @@ const supabase = createBrowserClient(
 
 export default function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [cartOpen, setCartOpen] = useState(false);
   const router = useRouter();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
@@ -41,13 +40,7 @@ export default function Navbar() {
         {/* Center: Medium Devices - Cart + Sign in */}
         {/* Right Controls */}
         <div className="flex items-center gap-4 ml-auto">
-          {/* Cart button: visible on all devices */}
-          <button
-            className="text-lg  hover:text-gray-300 lg:hidden"
-            onClick={() => setCartOpen(true)}
-          >
-            Cart(0)
-          </button>
+          {/* Cart removed */}
 
           {/* Sign in button: only on md and up */}
           <div className="hidden md:flex mr-4">
@@ -86,12 +79,7 @@ export default function Navbar() {
             </Link>
           )}
 
-          <button
-            className=" hover:text-gray-300"
-            onClick={() => setCartOpen(true)}
-          >
-            Cart(0)
-          </button>
+          {/* Cart removed */}
         </nav>
 
         {/* Right: Desktop Controls */}
@@ -130,44 +118,11 @@ export default function Navbar() {
           <Link href="/pricing" className="block hover:text-gray-300">
             Pricing
           </Link>
-          <button
-            className="text-sm hover:text-gray-300"
-            onClick={() => {
-              setCartOpen(true);
-              setMobileOpen(false);
-            }}
-          >
-            Cart(0)
-          </button>
+          {/* Cart removed */}
         </div>
       )}
 
-      {/* Cart Modal */}
-      {cartOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70">
-          <div className="bg-[#0B0A13] rounded-2xl p-6 w-11/12 max-w-md relative">
-            <button
-              className="absolute top-4 right-4 text-white text-xl"
-              onClick={() => setCartOpen(false)}
-            >
-              ×
-            </button>
-            <h2 className="text-2xl font-bold mb-4">Your Cart</h2>
-            <p className="text-gray-300 mb-4">You have 0 items in your cart.</p>
-
-            <div className="space-y-3 max-h-60 overflow-y-auto">
-              <div className="flex justify-between items-center border-b border-gray-700/30 pb-2">
-                <span>Item 1</span>
-                <span>$10</span>
-              </div>
-            </div>
-
-            <button className="mt-6 w-full bg-gradient-to-r from-purple-500 to-pink-500 text-black font-semibold py-3 rounded-xl">
-              Checkout
-            </button>
-          </div>
-        </div>
-      )}
+      {/* Cart UI removed */}
     </header>
   );
 }
