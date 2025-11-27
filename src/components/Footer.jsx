@@ -159,24 +159,7 @@ const Footer = () => {
         <div className="flex items-center text-white font-bold text-lg mb-4 md:mb-0">
           <img src="/hii5logo.png" alt="Hii5 logo" className="w-[70px]" />
         </div>
-        <div className="text-center md:text-right">
-          Copyright &copy; Dark X | Designed by{' '}
-          <a
-            href="#"
-            className="hover:underline transition duration-200"
-            style={{ color: ACCENT_COLOR }}
-          >
-            BRIX Templates
-          </a>{' '}
-          | Powered by{' '}
-          <a
-            href="#"
-            className="hover:underline transition duration-200"
-            style={{ color: ACCENT_COLOR }}
-          >
-            Webflow
-          </a>
-        </div>
+        <div className="text-center md:text-right">Copyright &copy; Hii5</div>
       </div>
     </footer>
   );
