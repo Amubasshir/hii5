@@ -194,15 +194,15 @@ export default function ReviewPage() {
 
   const handleSubmit = async () => {
     if (rating === 0) {
-      alert('Please select a rating');
+      toast.error('Please select a rating');
       return;
     }
     if (review.trim() === '') {
-      alert('Please write a review');
+      toast.error('Please write a review');
       return;
     }
     if (!params?.slug) {
-      alert('Please provide a company ID');
+      toast.error('Please provide a company ID');
       return;
     }
 
@@ -225,7 +225,7 @@ export default function ReviewPage() {
             // router.push('/thank-you');
         }
 
-        toast.success(data?.message)
+        toast.success(data?.message);
         
       // Call the Edge Function
     //   const response = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/submit-review`, {
@@ -246,6 +246,7 @@ export default function ReviewPage() {
 
     //   if (!response.ok) {
       if (error) {
+        toast.error(error || 'Failed to submit review');
         throw new Error(error || 'Failed to submit review');
       }
 
@@ -264,7 +265,7 @@ export default function ReviewPage() {
 
     } catch (error) {
       console.error('Error submitting review:', error);
-      alert(error.message || 'Failed to submit review. Please try again.');
+      toast.error(error.message || 'Failed to submit review. Please try again.');
     } finally {
       setIsLoading(false);
     }
