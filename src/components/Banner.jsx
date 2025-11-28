@@ -82,17 +82,17 @@ export default function Hero() {
 
         {/* Heading */}
         <h1 className="text-4xl md:text-6xl font-bold leading-tight">
-          Next-gen investing app
+          Boost your reputation with
           <br />
           <span className="text-transparent bg-clip-text bg-gradient-to-r from-pink-500 to-blue-500">
-            for modern investors
+            smarter customer reviews
           </span>
         </h1>
 
         {/* Subtitle */}
         <p className="text-gray-300 max-w-2xl mx-auto mt-4">
-          Lorem ipsum dolor sit amet consectetur adipiscing elit blandit id
-          dolor venenatis auctor maecenas egestas arcu ut consectetur.
+          Turn happy customers into public reviews while capturing unhappy
+          feedback privately, giving your business a smarter way to grow trust.
         </p>
 
         {/* Buttons */}
