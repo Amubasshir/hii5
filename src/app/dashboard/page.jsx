@@ -288,8 +288,77 @@ const DashboardPage = () => {
     showMessage('Logo updated!');
   };
 
+  // const submitHandler = async e => {
+  //   e.preventDefault();
+
+  //   const formData = {
+  //     business_name: businessName || 'Unnamed Business',
+  //     slug,
+  //     brand_color: brandColor || null,
+  //     logo_url: logoUrl || null,
+  //     google_url: googleURL || null,
+  //     yelp_url: yelpURL || null,
+  //     created_by: userData?.id,
+  //   };
+
+  //   let currentBusiness = businesses || null;
+  //   let currentError = null;
+
+  //   // UPDATE existing business
+  //   if (currentBusiness && currentBusiness.id) {
+  //     const { error } = await supabase
+  //       .from('businesses')
+  //       .update(formData)
+  //       .eq('id', currentBusiness.id);
+
+  //     currentError = error;
+  //   }
+  //   // INSERT new business
+  //   else {
+  //     const { data, error } = await supabase
+  //       .from('businesses')
+  //       .insert(formData)
+  //       .select()
+  //       .single();
+
+  //     currentError = error;
+  //     currentBusiness = data;
+  //     if (data) setBusinesses(data); // update state immediately
+  //   }
+
+  //   if (currentError) {
+  //     console.log('save business error', currentError);
+  //     return showMessage('Failed to save settings', true);
+  //   }
+
+  //   const { data: contactInfoData, error: contactInfoError } = await supabase
+  //     .from('reviews_contact_info')
+  //     .upsert(
+  //       {
+  //         slug: formData.slug,
+  //         company_id: currentBusiness.id,
+  //         email: userData?.email,
+  //         google_url: formData?.google_url,
+  //       },
+  //       { onConflict: 'company_id' }
+  //     );
+
+  //   if (contactErr) {
+  //     console.log('reviews_contact_info upsert error', contactErr);
+  //     return showMessage('Failed to save contact info', true);
+  //   }
+
+  //   setReviewLink(`${window.location.origin}/review/${formData.slug}`);
+  //   showMessage('Settings saved successfully!');
+  // };
+
   const submitHandler = async e => {
     e.preventDefault();
+
+    if (!userData?.id) {
+      console.error('User not loaded');
+      return showMessage('User not logged in', true);
+    }
 
     const formData = {
       business_name: businessName || 'Unnamed Business',
@@ -298,74 +367,37 @@ const DashboardPage = () => {
       logo_url: logoUrl || null,
       google_url: googleURL || null,
       yelp_url: yelpURL || null,
-      created_by: userData?.id,
+      created_by: userData.id, // <-- NOW SAFE
     };
 
     let currentBusiness = businesses || null;
-    let currentError = null;
 
-    // ---------------------------------------------
-    // UPDATE existing business
-    // ---------------------------------------------
-    if (currentBusiness && currentBusiness.id) {
-      const { error } = await supabase
+    if (currentBusiness?.id) {
+      await supabase
         .from('businesses')
         .update(formData)
         .eq('id', currentBusiness.id);
-
-      currentError = error;
-    }
-
-    // ---------------------------------------------
-    // INSERT new business
-    // ---------------------------------------------
-    else {
-      const { data, error } = await supabase
+    } else {
+      const { data } = await supabase
         .from('businesses')
         .insert(formData)
         .select()
         .single();
 
-      currentError = error;
       currentBusiness = data;
-
-      if (data) setBusinesses(data); // update state
+      if (data) setBusinesses(data);
     }
 
-    // ---------------------------------------------
-    // HANDLE ERROR
-    // ---------------------------------------------
-    if (currentError) {
-      console.log('save business error', currentError);
-      return showMessage('Failed to save settings', true);
-    }
+    await supabase.from('reviews_contact_info').upsert(
+      {
+        slug: formData.slug,
+        company_id: currentBusiness.id,
+        email: userData.email,
+        google_url: formData.google_url,
+      },
+      { onConflict: 'company_id' }
+    );
 
-    // ---------------------------------------------
-    // UPSERT review contact info
-    // ---------------------------------------------
-    const { data: contactInfoData, error: contactInfoError } = await supabase
-      .from('reviews_contact_info')
-      .upsert(
-        {
-          slug: formData.slug,
-          company_id: currentBusiness.id,
-          email: userData?.email,
-          google_url: formData.google_url,
-        },
-        { onConflict: 'company_id' }
-      )
-      .select()
-      .single();
-
-    if (contactInfoError) {
-      console.log('reviews_contact_info upsert error', contactInfoError);
-      return showMessage('Failed to save contact info', true);
-    }
-
-    // ---------------------------------------------
-    // SUCCESS
-    // ---------------------------------------------
-    setReviewLink(`${window.location.origin}/review/${formData.slug}`);
     showMessage('Settings saved successfully!');
   };
 

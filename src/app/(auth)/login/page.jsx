@@ -2,10 +2,11 @@
 
 import { createBrowserClient } from '@supabase/ssr';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { FcGoogle } from 'react-icons/fc';
 import '../../globals.css';
 
+// ✅ Initialize Supabase client
 const supabase = createBrowserClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
   process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
@@ -17,116 +18,161 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
 
-  // ---------- Email/Password Login ----------
-  const handleLogin = async (e) => {
-    e.preventDefault();
+  // ✅ Save user to profiles table
+  const saveUserToDB = async user => {
+    if (!user || !user.id) return;
 
-    if (!email.trim() || !password.trim()) {
-      setError('Please fill out all fields.');
-      return;
+    const { error: dbError } = await supabase.from('profiles').upsert(
+      {
+        id: user.id,
+        email: user.email,
+        name: user.user_metadata?.full_name || '',
+        avatar_url: user.user_metadata?.avatar_url || '',
+      },
+      { onConflict: 'id' }
+    );
+
+    if (dbError) {
+      console.error('Error saving user:', dbError.message);
     }
+  };
 
-    const { error: supabaseError } = await supabase.auth.signInWithPassword({
+  // ✅ Email & Password Login
+  const handleLogin = async e => {
+    e.preventDefault();
+    setError('');
+
+    const { data, error: loginError } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
 
-    if (supabaseError) {
-      setError(supabaseError.message);
+    if (loginError) {
+      setError(loginError.message);
       return;
     }
 
+    await saveUserToDB(data.user);
     router.push('/dashboard');
   };
 
-  // ---------- Google Login ----------
+  // ✅ Google Login
   const handleGoogleLogin = async () => {
-    const { error: supabaseError } = await supabase.auth.signInWithOAuth({
+    setError('');
+
+    const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
-      options: { redirectTo: `${window.location.origin}/dashboard` },
+      options: {
+        redirectTo: `${window.location.origin}/dashboard`,
+      },
     });
 
-    if (supabaseError) setError(supabaseError.message);
+    if (error) setError(error.message);
   };
+
+  // ✅ Listen for Google OAuth login & save user
+  useEffect(() => {
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === 'SIGNED_IN' && session?.user) {
+        await saveUserToDB(session.user);
+        router.push('/dashboard');
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [router]);
 
   return (
     <div className="min-h-screen bg-[#0B0A13] text-white flex flex-col justify-center items-center py-12 sm:px-6 lg:px-8 relative">
-      <div className="neon-orb" style={{ top: '20%', left: '20%' }}></div>
-      <div className="neon-orb" style={{ bottom: '20%', right: '20%' }}></div>
+      {/* Background Neon Orbs */}
+      <div
+        className="absolute w-64 h-64 rounded-full filter blur-3xl opacity-50 bg-pink-600/50"
+        style={{ top: '20%', left: '20%' }}
+      ></div>
+      <div
+        className="absolute w-64 h-64 rounded-full filter blur-3xl opacity-50 bg-blue-600/50"
+        style={{ bottom: '20%', right: '20%' }}
+      ></div>
 
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
         <div className="text-center">
-          <div className="flex justify-center items-center space-x-2 text-2xl font-bold mb-2">
-            <img src="/hii5logo.png" alt="Hii5 logo" className="w-20 h-20" />
-          </div>
+          <img src="/hii5logo.png" alt="logo" className="w-20 h-20 mx-auto" />
           <h2 className="mt-6 text-3xl font-extrabold">Welcome back</h2>
-          <p className="mt-2 text-sm">Sign in to access your dashboard</p>
+          <p className="mt-2 text-sm text-gray-400">
+            Sign in to access your dashboard
+          </p>
         </div>
 
-        <div className="mt-8 py-8 px-4 shadow rounded-lg sm:px-10 w-full">
+        <div className="mt-8 py-8 px-4 bg-[#14121F] border border-[#2A263F] shadow-2xl rounded-xl sm:px-10 w-full">
           <form className="space-y-6" onSubmit={handleLogin}>
+            {/* Email */}
             <div>
-              <label htmlFor="email" className="block text-sm font-medium">
-                Email address
-              </label>
+              <label className="block text-sm text-gray-300">Email</label>
               <input
-                id="email"
                 type="email"
+                required
                 value={email}
-                onChange={(e) => {
+                onChange={e => {
                   setEmail(e.target.value);
                   setError('');
                 }}
-                placeholder="you@example.com"
-                className="appearance-none block w-full px-3 py-3 border rounded-md shadow-sm focus:outline-none focus:ring-1 focus:ring-gray-400 sm:text-sm mt-1"
-                required
+                className="w-full px-4 py-3 bg-[#0B0A13] border border-gray-600 rounded-lg mt-1"
               />
             </div>
 
+            {/* Password */}
             <div>
-              <label htmlFor="password" className="block text-sm font-medium">
-                Password
-              </label>
+              <label className="block text-sm text-gray-300">Password</label>
               <input
-                id="password"
                 type="password"
+                required
                 value={password}
-                onChange={(e) => {
+                onChange={e => {
                   setPassword(e.target.value);
                   setError('');
                 }}
-                placeholder="Password"
-                className="appearance-none block w-full px-3 py-3 border rounded-md shadow-sm focus:outline-none focus:ring-1 focus:ring-gray-400 sm:text-sm mt-1"
-                required
+                className="w-full px-4 py-3 bg-[#0B0A13] border border-gray-600 rounded-lg mt-1"
               />
             </div>
 
-            {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
+            {/* Error */}
+            {error && (
+              <p className="text-red-400 text-sm text-center bg-red-900/20 p-2 rounded">
+                {error}
+              </p>
+            )}
 
+            {/* Submit */}
             <button
               type="submit"
-              className="w-full py-3 mt-2 cursor-pointer text-white font-medium rounded-lg transition
-                bg-[linear-gradient(135deg,rgba(255,0,80,0.9),rgba(255,70,200,0.9),rgba(70,120,255,0.9))]
-                hover:bg-[linear-gradient(135deg,rgba(255,0,80,1),rgba(255,70,200,1),rgba(70,120,255,1))]
-                shadow-[0_0_20px_rgba(255,70,200,0.4)]"
+              className="w-full py-3 rounded-lg font-semibold bg-pink-600 hover:opacity-90"
             >
               Continue to Dashboard
             </button>
 
+            <div className="flex items-center gap-4 my-6">
+              <div className="h-px bg-gray-700 flex-1"></div>
+              <span className="text-gray-400 text-sm">OR</span>
+              <div className="h-px bg-gray-700 flex-1"></div>
+            </div>
+
+            {/* Google Button */}
             <button
               type="button"
               onClick={handleGoogleLogin}
-              className="w-full mt-4 flex items-center justify-center gap-3 border cursor-pointer  border-gray-600 py-3 rounded-lg hover:bg-white/5 transition"
+              className="w-full flex items-center justify-center gap-3 border border-gray-600 py-3 rounded-lg hover:bg-gray-800"
             >
-              <FcGoogle size={30} />
+              <FcGoogle size={26} />
               Continue with Google
             </button>
           </form>
 
           <div className="mt-6 text-center">
-            <p className="text-sm">
+            <p className="text-sm text-gray-400">
               Don't have an account?
-              <a href="/register" className="font-medium ml-1 text-pink-700">
+              <a href="/register" className="ml-1 text-pink-500 font-semibold">
                 Sign up
               </a>
             </p>
