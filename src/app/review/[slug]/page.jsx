@@ -200,7 +200,7 @@ export default function ReviewPage() {
                 <button
                   onClick={handleSubmit}
                   disabled={isLoading}
-                  className="w-full bg-blue-600 text-white py-3 rounded-lg "
+                  className="w-full bg-blue-600 cursor-pointer text-white py-3 rounded-lg "
                 >
                   {isLoading ? 'Submitting...' : 'Submit Review'}
                 </button>
