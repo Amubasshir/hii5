@@ -1,7 +1,8 @@
 'use client';
 
 import { useCurrentUser } from '@/contexts/CurrentUserContext';
-import { createClient } from '@supabase/supabase-js';
+
+import { createClient } from '../../../utlis/supabase/client';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import QRCode from 'react-qr-code';
