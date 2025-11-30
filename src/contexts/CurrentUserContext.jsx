@@ -1,6 +1,12 @@
 'use client';
 
-import { createContext, useCallback, useContext, useEffect, useState } from 'react';
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useState,
+} from 'react';
 import { createClient } from '../../utlis/supabase/client';
 
 const CurrentUserContext = createContext(null);
@@ -63,7 +69,9 @@ export function CurrentUserProvider({ children, table = 'users' }) {
   }, [fetchCurrentUser, supabase]);
 
   return (
-    <CurrentUserContext.Provider value={{ userData, loading, error, refresh: fetchCurrentUser }}>
+    <CurrentUserContext.Provider
+      value={{ userData, loading, error, refresh: fetchCurrentUser }}
+    >
       {children}
     </CurrentUserContext.Provider>
   );

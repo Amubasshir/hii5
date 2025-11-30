@@ -7,10 +7,14 @@ export const metadata = {
   },
 };
 
+import { CurrentUserProvider } from '@/contexts/CurrentUserContext';
+
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body>
+        <CurrentUserProvider>{children}</CurrentUserProvider>
+      </body>
     </html>
   );
 }

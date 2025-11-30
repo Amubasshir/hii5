@@ -288,70 +288,6 @@ const DashboardPage = () => {
     showMessage('Logo updated!');
   };
 
-  // const submitHandler = async e => {
-  //   e.preventDefault();
-
-  //   const formData = {
-  //     business_name: businessName || 'Unnamed Business',
-  //     slug,
-  //     brand_color: brandColor || null,
-  //     logo_url: logoUrl || null,
-  //     google_url: googleURL || null,
-  //     yelp_url: yelpURL || null,
-  //     created_by: userData?.id,
-  //   };
-
-  //   let currentBusiness = businesses || null;
-  //   let currentError = null;
-
-  //   // UPDATE existing business
-  //   if (currentBusiness && currentBusiness.id) {
-  //     const { error } = await supabase
-  //       .from('businesses')
-  //       .update(formData)
-  //       .eq('id', currentBusiness.id);
-
-  //     currentError = error;
-  //   }
-  //   // INSERT new business
-  //   else {
-  //     const { data, error } = await supabase
-  //       .from('businesses')
-  //       .insert(formData)
-  //       .select()
-  //       .single();
-
-  //     currentError = error;
-  //     currentBusiness = data;
-  //     if (data) setBusinesses(data); // update state immediately
-  //   }
-
-  //   if (currentError) {
-  //     console.log('save business error', currentError);
-  //     return showMessage('Failed to save settings', true);
-  //   }
-
-  //   const { data: contactInfoData, error: contactInfoError } = await supabase
-  //     .from('reviews_contact_info')
-  //     .upsert(
-  //       {
-  //         slug: formData.slug,
-  //         company_id: currentBusiness.id,
-  //         email: userData?.email,
-  //         google_url: formData?.google_url,
-  //       },
-  //       { onConflict: 'company_id' }
-  //     );
-
-  //   if (contactErr) {
-  //     console.log('reviews_contact_info upsert error', contactErr);
-  //     return showMessage('Failed to save contact info', true);
-  //   }
-
-  //   setReviewLink(`${window.location.origin}/review/${formData.slug}`);
-  //   showMessage('Settings saved successfully!');
-  // };
-
   const submitHandler = async e => {
     e.preventDefault();
 
@@ -507,7 +443,7 @@ const DashboardPage = () => {
                   setSlug(s);
                   setReviewLink(`${window.location.origin}/review/${s}`);
                 }}
-                className="h-[47px] px-4 border border-gray-600 rounded-lg text-sm text-gray-300"
+                className="h-[47px] px-4 border border-gray-600 rounded-lg text-sm text-gray-300 cursor-pointer"
                 style={{ backgroundColor: brandColor }}
               >
                 Regenerate
@@ -656,10 +592,6 @@ const DashboardPage = () => {
           <UpgradeCard />
         </div>
       </main>
-
-      <footer className="fixed bottom-0 left-1/2 transform -translate-x-1/2 p-3 text-xs text-gray-500">
-        Built with <span className="text-red-500">❤️</span> Lovable
-      </footer>
     </div>
   );
 };

@@ -48,22 +48,6 @@ export default function RegisterPage() {
       return;
     }
 
-    // 2️⃣ Add user to your table
-    // const { error: tableError } = await supabase.from('users').insert([
-    //   {
-    //     full_name: name,
-    //     email: email,
-    //   },
-    // ]);
-
-    // if (tableError) {
-    //   setError(
-    //     'User registered but failed to add to table: ' + tableError.message
-    //   );
-    //   return;
-    // }
-
-    // Show message to check email
     setError(
       'Account created! Please check your email and verify before logging in.'
     );
