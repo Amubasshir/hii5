@@ -69,7 +69,7 @@ export default function Navbar() {
               <div className="relative">
                 <button
                   onClick={() => setProfileOpen(!profileOpen)}
-                  className="w-11 h-11 rounded-full overflow-hidden border border-white/20"
+                  className="w-11 h-11 rounded-full overflow-hidden border border-white/20 cursor-pointer"
                 >
                   <img
                     src={avatarUrl}
@@ -84,7 +84,7 @@ export default function Navbar() {
                     <Link
                       href="/dashboard"
                       onClick={() => setProfileOpen(false)}
-                      className="block px-4 py-3 hover:bg-white/10"
+                      className="block px-4 py-3 hover:bg-white/10 cursor-pointer"
                     >
                       Dashboard
                     </Link>
@@ -94,7 +94,7 @@ export default function Navbar() {
                         setProfileOpen(false);
                         handleLogout();
                       }}
-                      className="w-full text-left px-4 py-3 text-red-400 hover:bg-white/10"
+                      className="w-full text-left px-4 py-3 text-red-400 hover:bg-white/10 cursor-pointer"
                     >
                       Logout
                     </button>

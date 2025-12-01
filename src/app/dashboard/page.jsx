@@ -2,10 +2,10 @@
 
 import { useCurrentUser } from '@/contexts/CurrentUserContext';
 
-import { createClient } from '../../../utlis/supabase/client';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import QRCode from 'react-qr-code';
+import { createClient } from '../../../utlis/supabase/client';
 import '../globals.css';
 
 const supabase = createClient(
@@ -186,7 +186,7 @@ const DashboardPage = () => {
         .from('businesses')
         .select('*')
         .eq('created_by', userData.id)
-        .single();
+        .maybeSingle();
 
       setLoading(false);
       if (error) {
@@ -319,7 +319,7 @@ const DashboardPage = () => {
         .from('businesses')
         .insert(formData)
         .select()
-        .single();
+        .maybeSingle();
 
       currentBusiness = data;
       if (data) setBusinesses(data);

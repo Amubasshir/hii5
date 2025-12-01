@@ -36,7 +36,7 @@ export default function VerifyOTPPage({ searchParams }) {
         .eq('user_id', userId)
         .eq('code', otp)
         .gte('expires_at', new Date())
-        .single();
+        .maybeSingle();
 
       if (!otpData) {
         setError('Invalid or expired OTP');

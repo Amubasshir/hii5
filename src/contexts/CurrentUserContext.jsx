@@ -1,11 +1,11 @@
 'use client';
 
 import {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useState,
+    createContext,
+    useCallback,
+    useContext,
+    useEffect,
+    useState,
 } from 'react';
 import { createClient } from '../../utlis/supabase/client';
 
@@ -36,7 +36,7 @@ export function CurrentUserProvider({ children, table = 'users' }) {
         .from(table)
         .select('*')
         .eq('id', user.id)
-        .single();
+        .maybeSingle();
 
       if (qErr) {
         setError(qErr);
