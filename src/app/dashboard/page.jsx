@@ -3,7 +3,7 @@
 import { useCurrentUser } from '@/contexts/CurrentUserContext';
 
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import QRCode from 'react-qr-code';
 import { createClient } from '../../../utlis/supabase/client';
 import '../globals.css';
@@ -49,7 +49,7 @@ const CopyIcon = props => (
 );
 
 const StatCard = ({ title, value, subtitle }) => (
-  <div className="bg-gray-800 p-5 rounded-2xl flex flex-col justify-between shadow-lg border border-gray-700">
+  <div className="bg-gray-800 p-5 rounded-2xl flex flex-col justify-between shadow-lg border border-gray-700  ">
     <span className="text-sm text-gray-400">{title}</span>
     <p className="text-3xl font-extrabold mt-2 text-white">{value}</p>
     {subtitle && <p className="text-xs mt-1 text-gray-500">{subtitle}</p>}
@@ -96,12 +96,23 @@ const UpgradeCard = () => (
     </p>
     <a
       href="/pricing"
-      className="inline-block w-full text-center py-2.5 px-4 font-semibold rounded-lg text-black bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 transition duration-300 shadow-lg"
+      className="relative inline-block rounded-full p-[3px] bg-pink-500 w-full text-center px-5 py-3"
     >
       View Pricing
     </a>
   </div>
 );
+
+const extractLrdFromGoogleUrl = url => {
+  const match = url.match(/0x[a-fA-F0-9]+:0x[a-fA-F0-9]+/);
+  return match ? match[0] : null;
+};
+
+const generateGoogleReviewDeepLink = googleUrl => {
+  const lrd = extractLrdFromGoogleUrl(googleUrl);
+  if (!lrd) return null;
+  return `https://www.google.com/search?#lrd=${lrd},3,,,,`;
+};
 
 const DashboardPage = () => {
   const [businessName, setBusinessName] = useState('');
@@ -124,7 +135,13 @@ const DashboardPage = () => {
   const [message, setMessage] = useState('');
   const [isError, setIsError] = useState(false);
   const [loading, setLoading] = useState(false);
+  const qrRef = useRef(null);
+  const [isDirty, setIsDirty] = useState(false);
+  const [headline, setHeadline] = useState('');
+  const [subtext, setSubtext] = useState('');
+  // Inside your parent component function:
 
+  const [selectedPlatform, setSelectedPlatform] = useState('google');
   const showMessage = (msg, error = false) => {
     setMessage(msg);
     setIsError(error);
@@ -292,6 +309,8 @@ const DashboardPage = () => {
   const submitHandler = async e => {
     e.preventDefault();
 
+    setIsDirty(false);
+
     if (!userData?.id) {
       console.error('User not loaded');
       return showMessage('User not logged in', true);
@@ -304,6 +323,8 @@ const DashboardPage = () => {
       logo_url: logoUrl || null,
       google_url: googleURL || null,
       yelp_url: yelpURL || null,
+      headline: headline || null, // <-- add this
+      subtext: subtext || null, // <-- add this
       created_by: userData.id, // <-- NOW SAFE
     };
 
@@ -346,6 +367,104 @@ const DashboardPage = () => {
   const maxReviews = Math.max(...analytics.last7Days, 1);
   const barHeightScale = 100 / maxReviews;
 
+  const downloadQR = async () => {
+    if (!qrRef.current) return;
+
+    const svg = qrRef.current.querySelector('svg');
+    const serializer = new XMLSerializer();
+    const svgData = serializer.serializeToString(svg);
+
+    const canvas = document.createElement('canvas');
+    const size = 1000; // high resolution
+    canvas.width = size;
+    canvas.height = size;
+
+    const ctx = canvas.getContext('2d');
+    const img = new Image();
+
+    const svgBlob = new Blob([svgData], {
+      type: 'image/svg+xml;charset=utf-8',
+    });
+    const url = URL.createObjectURL(svgBlob);
+
+    img.onload = () => {
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, size, size);
+      ctx.drawImage(img, 0, 0, size, size);
+      URL.revokeObjectURL(url);
+
+      const jpgUrl = canvas.toDataURL('image/jpeg', 1.0);
+
+      const link = document.createElement('a');
+      link.href = jpgUrl;
+      link.download = 'review-qr.jpg';
+      link.click();
+    };
+
+    img.src = url;
+  };
+
+  const handleInputChange = setter => e => {
+    setter(e.target.value);
+    setIsDirty(true); // কোনো চেঞ্জ হলে true
+  };
+
+  // Preview Handler
+  const handlePreviewClick = () => {
+    if (isDirty) {
+      showMessage('You have unsaved changes. Please save before previewing!');
+      return;
+    }
+    window.open(reviewLink, '_blank');
+  };
+
+  const ToggleSwitch = ({ label, isChecked, onToggle }) => (
+    <div className="mb-4">
+      <label className="block text-sm font-medium text-gray-300 mb-2">
+        Select review platform:
+      </label>
+      <div className="flex rounded-lg bg-gray-800 p-1 space-x-1 max-w-xs mx-auto">
+        {/* Google অপশন */}
+        <button
+          onClick={() => setSelectedPlatform('google')}
+          className={`
+        w-1/2 py-2 text-sm font-medium rounded-lg transition-colors duration-200
+        ${
+          selectedPlatform === 'google'
+            ? 'bg-pink-600 text-white shadow' // Google সিলেক্ট হলে Indigo রঙ
+            : 'text-gray-400 hover:bg-gray-700 hover:text-white'
+        }
+      `}
+        >
+          Google
+        </button>
+
+        {/* Yelp অপশন */}
+        <button
+          onClick={() => setSelectedPlatform('yelp')}
+          className={`
+        w-1/2 py-2 text-sm font-medium rounded-lg transition-colors duration-200
+        ${
+          selectedPlatform === 'yelp'
+            ? 'bg-yellow-600 text-white shadow' // Yelp সিলেক্ট হলে Yellow রঙ
+            : 'text-gray-400 hover:bg-gray-700 hover:text-white'
+        }
+      `}
+        >
+          Yelp
+        </button>
+      </div>
+    </div>
+  );
+
+  const handleActionWithDirtyCheck = action => {
+    if (isDirty) {
+      showMessage('You have unsaved changes. Please save first!', true);
+      return;
+    }
+    action();
+  };
+
   return (
     <div className="min-h-screen bg-gray-900 text-white font-sans">
       {message && (
@@ -365,7 +484,7 @@ const DashboardPage = () => {
           </Link>
           <button
             onClick={logoutHandler}
-            className="rounded-full p-2 bg-gradient-to-r from-pink-500 to-purple-500 flex items-center gap-3"
+            className="rounded-full px-4 py-2 bg-pink-500 flex items-center gap-3 cursor-pointer"
           >
             <LogOutIcon /> Logout
           </button>
@@ -381,33 +500,31 @@ const DashboardPage = () => {
           >
             <h2 className="text-xl font-semibold text-white">Business Setup</h2>
 
+            {/* Business Logo */}
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-1">
                 Business Logo
               </label>
-              <div className="flex items-center gap-4">
-                <label
-                  className="px-4 py-2 text-sm font-medium border border-pink-500 rounded-lg text-white cursor-pointer"
-                  style={{ backgroundColor: brandColor }}
-                >
+              <div className="flex items-center gap-4 justify-between">
+                <label className="relative inline-block rounded-full p-[3px] bg-pink-500 text-center px-5 py-3 cursor-pointer">
                   Choose File
                   <input
                     type="file"
-                    className="hidden"
+                    className="hidden cursor-pointer"
                     onChange={handleLogoChange}
                   />
                 </label>
-                <span className="text-sm text-gray-400">{logoName}</span>
+                {logoUrl && (
+                  <img
+                    src={logoUrl}
+                    className="w-20 h-20 mt-3 object-contain rounded-lg border border-gray-600 p-1 bg-white"
+                    alt="Business logo"
+                  />
+                )}
               </div>
-              {logoUrl && (
-                <img
-                  src={logoUrl}
-                  className="w-20 h-20 mt-3 object-contain rounded-lg border border-gray-600 p-1 bg-white"
-                  alt="Business logo"
-                />
-              )}
             </div>
 
+            {/* Business Name */}
             <div>
               <label className="block text-sm font-medium text-gray-300">
                 Business Name
@@ -415,11 +532,12 @@ const DashboardPage = () => {
               <input
                 type="text"
                 value={businessName}
-                onChange={e => setBusinessName(e.target.value)}
+                onChange={handleInputChange(setBusinessName)}
                 className="mt-1 block w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-sm text-white"
               />
             </div>
 
+            {/* Slug */}
             <div className="flex gap-3 items-end">
               <div className="flex-1">
                 <label className="block text-sm font-medium text-gray-300">
@@ -443,58 +561,69 @@ const DashboardPage = () => {
                   const s = generateSlug();
                   setSlug(s);
                   setReviewLink(`${window.location.origin}/review/${s}`);
+                  setIsDirty(true);
                 }}
-                className="h-[47px] px-4 border border-gray-600 rounded-lg text-sm text-gray-300 cursor-pointer"
-                style={{ backgroundColor: brandColor }}
+                className="relative inline-block rounded-full p-[3px] bg-pink-500 text-center px-5 py-3 cursor-pointer"
               >
                 Regenerate
               </button>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-300">
-                Google Reviews URL
-              </label>
-              <input
-                type="url"
-                value={googleURL}
-                onChange={e => setGoogleURL(e.target.value)}
-                placeholder="https://g.page/your-business/review"
-                className="mt-1 block w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-sm text-white"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-300">
-                Yelp URL
-              </label>
-              <input
-                type="url"
-                value={yelpURL}
-                onChange={e => setYelpURL(e.target.value)}
-                placeholder="https://yelp.com/biz/your-business"
-                className="mt-1 block w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-sm text-white"
-              />
+            {/* URLs */}
+
+            <ToggleSwitch />
+            <div className="space-y-4">
+              {selectedPlatform === 'google' && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-300">
+                    Google Reviews URL
+                  </label>
+                  <input
+                    type="url"
+                    value={googleURL}
+                    onChange={handleInputChange(setGoogleURL)}
+                    placeholder="https://g.page/your-business/review"
+                    className="mt-1 block w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-sm text-white"
+                  />
+                </div>
+              )}
+
+              {selectedPlatform === 'yelp' && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-300">
+                    Yelp URL
+                  </label>
+                  <input
+                    type="url"
+                    value={yelpURL}
+                    onChange={handleInputChange(setYelpURL)}
+                    placeholder="https://yelp.com/biz/your-business"
+                    className="mt-1 block w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-sm text-white"
+                  />
+                </div>
+              )}
             </div>
 
-            <div className="flex items-center gap-3">
+            {/* Brand Color */}
+            <div className="flex items-center gap-5">
               <input
                 type="color"
                 value={brandColor}
-                onChange={e => setBrandColor(e.target.value)}
-                className="w-12 h-12 rounded-full cursor-pointer"
+                onChange={handleInputChange(setBrandColor)}
+                className="w-13 h-13 rounded-2xl cursor-pointer"
               />
               <input
                 type="text"
                 value={brandColor}
-                onChange={e => setBrandColor(e.target.value)}
+                onChange={handleInputChange(setBrandColor)}
                 className="w-32 bg-gray-700 border border-gray-600 rounded-lg p-3 text-sm text-white font-mono"
               />
             </div>
 
+            {/* Save Button */}
             <button
               type="submit"
-              style={{ backgroundColor: brandColor }}
-              className="w-full mt-4 py-3 text-white cursor-pointer font-bold rounded-lg hover:opacity-90 transition duration-200 shadow-lg"
+              className="relative inline-block rounded-full p-[3px] bg-pink-500 w-full text-center px-5 py-3 cursor-pointer"
             >
               Save Settings
             </button>
@@ -509,20 +638,37 @@ const DashboardPage = () => {
                 {reviewLink}
               </span>
               <button
-                onClick={() => {
-                  navigator.clipboard.writeText(reviewLink);
-                  showMessage('Link copied!');
-                }}
-                className="ml-4 p-2 text-gray-400 hover:text-white"
+                onClick={() =>
+                  handleActionWithDirtyCheck(() => {
+                    navigator.clipboard.writeText(reviewLink);
+                    showMessage('Link copied!');
+                  })
+                }
               >
                 <CopyIcon />
               </button>
             </div>
             <div className="flex flex-col items-center py-4 space-y-4">
-              <QRCode value={reviewLink} size={180} fgColor={brandColor} />
+              <div ref={qrRef} className="bg-white p-4 rounded-lg">
+                <QRCode value={reviewLink} size={180} />
+              </div>
+
+              <button
+                onClick={() => handleActionWithDirtyCheck(downloadQR)}
+                className="rounded-full px-4 py-2 bg-pink-500 flex items-center gap-3 cursor-pointer"
+              >
+                Download QR (JPG)
+              </button>
+
               <a
-                href={`/public/${slug}`}
-                className="text-sm font-medium text-gray-400 hover:text-white"
+                href={`/review/${slug}`}
+                className="text-sm font-medium text-gray-400 hover:text-white "
+                onClick={e => {
+                  e.preventDefault();
+                  handleActionWithDirtyCheck(() =>
+                    window.open(reviewLink, '_blank')
+                  );
+                }}
               >
                 Open Public Page
               </a>
@@ -563,7 +709,7 @@ const DashboardPage = () => {
                 {analytics.last7Days.map((count, index) => (
                   <div
                     key={index}
-                    className="w-1/7 bg-pink-500 rounded-t-sm"
+                    className="flex-1 rounded-t-sm bg-pink-500"
                     style={{ height: `${count * barHeightScale}%` }}
                     title={`${count} reviews`}
                   ></div>
@@ -573,20 +719,53 @@ const DashboardPage = () => {
           </div>
 
           <div className="bg-gray-800 p-6 rounded-2xl space-y-6 shadow-2xl border border-gray-700">
-            <h2 className="text-xl font-semibold text-white">
-              Example Templates
+            <h2 className="text-xl font-semibold text-white ">
+              Reviews Templates
             </h2>
+            <div>
+              <label className="block text-sm font-medium text-gray-300">
+                Headline
+              </label>
+              <input
+                type="text"
+                onChange={e => {
+                  setHeadline(e.target.value);
+                  setIsDirty(true); // mark dirty if changed
+                }}
+                placeholder="Enter headline text"
+                aria-label="Headline text"
+                className="mt-1 block w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-sm text-white"
+              />
+            </div>
+
+            {/* Subtext Input */}
+            <div>
+              <label className="block text-sm font-medium text-gray-300">
+                Subtext
+              </label>
+              <input
+                type="text"
+                onChange={e => {
+                  setSubtext(e.target.value);
+                  setIsDirty(true);
+                }}
+                placeholder="Enter subtext"
+                aria-label="Subtext"
+                className="mt-1 block w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-sm text-white"
+              />
+            </div>
+
             <TemplateCard
               title="Email Template"
               content="Hey [Name]! Thanks for choosing us. We'd love your feedback:"
               link={reviewLink}
-              brandColor={brandColor}
+              brandColor="#F472D0"
             />
             <TemplateCard
               title="SMS Template"
               content="Hi [Name]! Share your experience:"
               link={reviewLink}
-              brandColor={brandColor}
+              brandColor="#F472D0"
             />
           </div>
 

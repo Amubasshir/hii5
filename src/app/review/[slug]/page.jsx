@@ -3,8 +3,8 @@
 import { useCurrentUser } from '../../../contexts/CurrentUserContext';
 import { createBrowserClient } from '@supabase/ssr';
 import { Star } from 'lucide-react';
-import { useParams, useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useParams } from 'next/navigation';
+import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 
 const supabase = createBrowserClient(
@@ -13,199 +13,262 @@ const supabase = createBrowserClient(
 );
 
 export default function ReviewPage() {
-  const { userData, loading, error, refresh } = useCurrentUser();
+  const { userData } = useCurrentUser();
   const params = useParams();
-  const router = useRouter();
 
   const [rating, setRating] = useState(0);
   const [hoverRating, setHoverRating] = useState(0);
   const [review, setReview] = useState('');
+  const [fullName, setFullName] = useState('');
   const [submitted, setSubmitted] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [message, setMessage] = useState('');
-  const [fullName, setFullName] = useState('');
 
+  const [business, setBusiness] = useState(null);
+  const [pageLoading, setPageLoading] = useState(true);
+
+  // Fetch business
+  useEffect(() => {
+    if (!params?.slug) return;
+
+    const fetchBusiness = async () => {
+      const { data, error } = await supabase
+        .from('businesses')
+        .select('*')
+        .eq('slug', params.slug)
+        .maybeSingle();
+
+      if (error || !data) {
+        toast.error('Invalid business link');
+        return;
+      }
+
+      setBusiness(data);
+      setPageLoading(false);
+    };
+
+    fetchBusiness();
+  }, [params?.slug]);
+
+  // Save 1-3 stars feedback
   const handleSubmit = async () => {
     if (isLoading) return;
-
-    if (rating === 0) {
-      toast.error('Please select a rating');
-      return;
-    }
-
-    if (fullName.trim() === '') {
-      toast.error('Please enter your full name');
-      return;
-    }
-
-    if (review.trim() === '') {
-      toast.error('Please write a review');
-      return;
-    }
-
-    if (!params?.slug) {
-      toast.error('Invalid company link');
-      return;
-    }
+    if (rating === 0) return toast.error('Please select a rating');
+    if (!fullName.trim()) return toast.error('Please enter your full name');
+    if (!review.trim()) return toast.error('Please write your review');
 
     setIsLoading(true);
 
     try {
-      const { data, error } = await supabase.functions.invoke('submit-review', {
-        body: {
+      const { error } = await supabase.from('reviews').insert([
+        {
           rating,
-          review_text: review.trim(),
           full_name: fullName.trim(),
-          slug: params.slug,
+          review_text: review.trim(),
+          company_id: business.id,
+          user_id: userData?.id || null,
+          user_email: userData?.email || null,
         },
-      });
+      ]);
 
-      if (error) {
-        throw error;
-      }
+      if (error) throw error;
 
-      const successMessage = data?.message || 'Review submitted successfully';
-
-      toast.success(successMessage);
-      setMessage(successMessage);
+      toast.success('Feedback submitted successfully!');
       setSubmitted(true);
-
-      if (data?.data?.public_link) {
-        window.open(data.data.public_link, '_blank');
-      }
-
       setTimeout(() => {
         setRating(0);
-        setReview('');
         setFullName('');
+        setReview('');
         setSubmitted(false);
-        setMessage('');
       }, 3000);
     } catch (err) {
-      console.error('Submit Error:', err);
-      toast.error(err?.message || 'Failed to submit review');
+      console.error(err);
+      toast.error('Submission failed');
     } finally {
       setIsLoading(false);
     }
   };
 
+  // Save 4-5 stars and redirect
+  const handleHighRating = async () => {
+    if (isLoading) return;
+
+    setIsLoading(true);
+
+    try {
+      const { data, error } = await supabase
+        .from('reviews')
+        .insert([
+          {
+            rating,
+            full_name: fullName.trim() || userData?.name || '',
+            review_text: review.trim() || '',
+            company_id: business.id,
+            user_id: userData?.id || null,
+            user_email: userData?.email || null,
+          },
+        ])
+        .select();
+
+      if (error) throw error;
+      if (!data || data.length === 0) throw new Error('Insert failed');
+
+      toast.success('Rating saved successfully!');
+      setSubmitted(true);
+
+      setTimeout(() => {
+        setRating(0);
+        setFullName('');
+        setReview('');
+        setSubmitted(false);
+      }, 3000);
+    } catch (err) {
+      console.error('High rating save error:', err);
+      toast.error('Failed to save rating');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  if (pageLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        Loading...
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-gray-900 flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
-        <div className="bg-white rounded-2xl shadow-lg p-8 md:p-10">
-          {submitted ? (
-            <div className="flex flex-col items-center justify-center py-8">
-              <div
-                className={`w-16 h-16 rounded-full flex items-center justify-center mb-4 ${
-                  rating < 4 ? 'bg-orange-100' : 'bg-green-100'
-                }`}
+    <div
+      className="min-h-screen flex items-center justify-center p-4"
+      style={{ backgroundColor: business?.brand_color || '#f0f0f0' }}
+    >
+      <div className="w-full max-w-md bg-white rounded-2xl shadow-lg overflow-hidden">
+        {/* Cover */}
+        <div className="relative group">
+          <img
+            src={
+              business?.cover_image ||
+              'https://i.ibb.co.com/rGQ1X7d9/Whats-App-Image-2025-07-14-at-20-27-35-c0c5cbfc.jpg'
+            }
+            alt="Cover"
+            className="w-full h-52 object-cover rounded-md"
+          />
+
+          {/* Hover text */}
+          <div className="absolute top-2 left-2 bg-black/60 px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+            <span className="text-xs text-white">
+              Recommended image size: 400 × 800 px.
+            </span>
+          </div>
+        </div>
+
+        {/* Logo */}
+        <div className="-mt-12 flex justify-center">
+          <img
+            src={business?.logo_url || '/placeholder-logo.png'}
+            alt={business?.business_name}
+            className="w-24 h-24 rounded-full bg-white border-4 border-white object-contain z-30"
+            style={{ borderColor: business?.brand_color || '#f0f0f0' }}
+          />
+        </div>
+
+        <div className="px-6 pb-8 pt-4 text-center">
+          <h1
+            className="text-xl font-semibold"
+            style={{ color: business?.brand_color || '#f0f0f0' }}
+          >
+            {business?.headline || 'Leave a review'}
+          </h1>
+          <p className="text-sm mt-1 text-gray-500">
+            {business?.subtext || 'Your feedback helps us grow'}
+          </p>
+
+          {/* Star Rating */}
+          <div className="flex justify-center mt-5 gap-2">
+            {[1, 2, 3, 4, 5].map(star => (
+              <button
+                key={star}
+                onClick={() => setRating(star)}
+                onMouseEnter={() => setHoverRating(star)}
+                onMouseLeave={() => setHoverRating(0)}
               >
-                {rating < 4 ? (
-                  <svg
-                    className="w-8 h-8 text-orange-600"
-                    fill="currentColor"
-                    viewBox="0 0 20 20"
-                  >
-                    <path
-                      fillRule="evenodd"
-                      d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
-                ) : (
-                  <svg
-                    className="w-8 h-8 text-green-600"
-                    fill="currentColor"
-                    viewBox="0 0 20 20"
-                  >
-                    <path
-                      fillRule="evenodd"
-                      d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
-                )}
-              </div>
+                <Star
+                  size={34}
+                  className={
+                    (hoverRating || rating) >= star
+                      ? ''
+                      : 'fill-gray-300 stroke-gray-300'
+                  }
+                  style={
+                    (hoverRating || rating) >= star
+                      ? { color: business?.brand_color || '#ffae00' }
+                      : {}
+                  }
+                />
+                {/* <Star
+                  size={34}
+                  className={
+                    (hoverRating || rating) >= star
+                      ? 'fill-yellow-400 stroke-yellow-400'
+                      : 'fill-gray-300 stroke-gray-300'
+                  }
+                /> */}
+              </button>
+            ))}
+          </div>
 
-              <h2 className="text-2xl font-bold text-slate-900 text-center">
-                {rating < 4 ? 'Feedback Received' : 'Thank You!'}
-              </h2>
-              <p className="text-slate-600 text-center mt-2">{message}</p>
+          {/* 1–3 Stars Form */}
+          {rating > 0 && rating <= 3 && !submitted && (
+            <div className="mt-6 space-y-4 text-left">
+              <input
+                value={fullName}
+                onChange={e => setFullName(e.target.value)}
+                placeholder="Your full name"
+                className="w-full border rounded-lg px-3 py-2 text-sm"
+                disabled={isLoading}
+              />
+              <textarea
+                value={review}
+                onChange={e => setReview(e.target.value)}
+                placeholder="Write your feedback..."
+                rows={4}
+                className="w-full border rounded-lg px-3 py-2 text-sm"
+                disabled={isLoading}
+              />
+              <button
+                onClick={handleSubmit}
+                disabled={isLoading}
+                className="w-full py-3 rounded-lg text-white font-medium"
+                style={{ backgroundColor: business?.brand_color }}
+              >
+                {isLoading ? 'Submitting...' : 'Submit Feedback'}
+              </button>
             </div>
-          ) : (
-            <>
-              <div className="text-center mb-8">
-                <h1 className="text-3xl font-bold text-slate-900 mb-2">
-                  Leave us a review
-                </h1>
-                <p className="text-slate-500 text-sm">
-                  Share your experience with us
-                </p>
-              </div>
+          )}
 
-              <div className="space-y-6">
-                <div className="flex flex-col items-center space-y-3">
-                  <label className="text-sm font-semibold text-slate-700">
-                    Rating
-                  </label>
+          {/* 4–5 Stars Button */}
+          {rating >= 4 && !submitted && (
+            <div className="mt-6">
+              <button
+                onClick={handleHighRating}
+                disabled={isLoading}
+                className="w-full py-3 rounded-lg font-medium text-white"
+                style={{ backgroundColor: business?.brand_color }}
+              >
+                {isLoading
+                  ? 'Redirecting...'
+                  : `Continue to ${business?.review_platform || 'Google'}`}
+              </button>
+            </div>
+          )}
 
-                  <div className="flex gap-2">
-                    {[1, 2, 3, 4, 5].map(star => (
-                      <button
-                        key={star}
-                        onClick={() => setRating(star)}
-                        onMouseEnter={() => setHoverRating(star)}
-                        onMouseLeave={() => setHoverRating(0)}
-                        disabled={isLoading}
-                      >
-                        <Star
-                          size={32}
-                          className={
-                            (hoverRating || rating) >= star
-                              ? 'fill-amber-400 stroke-amber-400'
-                              : 'fill-slate-200 stroke-slate-300'
-                          }
-                        />
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <div>
-                  <label className="text-sm font-semibold text-slate-700">
-                    Full Name
-                  </label>
-                  <input
-                    type="text"
-                    value={fullName}
-                    onChange={e => setFullName(e.target.value)}
-                    className="w-full mt-1 p-3 rounded-lg outline-none border border-gray-700"
-                    disabled={isLoading}
-                  />
-                </div>
-
-                <div>
-                  <label className="text-sm font-semibold text-slate-700">
-                    Your Review
-                  </label>
-                  <textarea
-                    value={review}
-                    onChange={e => setReview(e.target.value)}
-                    className="w-full px-4 py-3 border rounded-lg"
-                    rows="5"
-                    disabled={isLoading}
-                  />
-                </div>
-
-                <button
-                  onClick={handleSubmit}
-                  disabled={isLoading}
-                  className="w-full bg-blue-600 cursor-pointer text-white py-3 rounded-lg "
-                >
-                  {isLoading ? 'Submitting...' : 'Submit Review'}
-                </button>
-              </div>
-            </>
+          {/* Success Message */}
+          {submitted && (
+            <div className="py-10">
+              <h2 className="text-lg font-semibold text-center">
+                Feedback received. Thank you!
+              </h2>
+            </div>
           )}
         </div>
       </div>
