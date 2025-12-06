@@ -107,10 +107,16 @@ export default function ReviewPage() {
             user_email: userData?.email || null,
           },
         ])
-        .select();
+        .select()
+        .maybeSingle();
+
+        
 
       if (error) throw error;
       if (!data || data.length === 0) throw new Error('Insert failed');
+
+    //   window.open(business?.google_url || business?.yelp_url, '_blank');
+      window.open(business?.google_url || business?.yelp_url);
 
       toast.success('Rating saved successfully!');
       setSubmitted(true);
@@ -129,13 +135,13 @@ export default function ReviewPage() {
     }
   };
 
-  if (pageLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        Loading...
-      </div>
-    );
-  }
+//   if (pageLoading) {
+//     return (
+//       <div className="min-h-screen flex items-center justify-center">
+//         Loading...
+//       </div>
+//     );
+//   }
 
   return (
     <div

@@ -7,6 +7,7 @@ import { useEffect, useState, useRef } from 'react';
 import QRCode from 'react-qr-code';
 import { createClient } from '../../../utlis/supabase/client';
 import '../globals.css';
+import PreviewPage from '@/components/PreviewPage';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -125,6 +126,7 @@ const DashboardPage = () => {
   const [yelpURL, setYelpURL] = useState('');
   const [brandColor, setBrandColor] = useState('#FF007f');
   const [reviewLink, setReviewLink] = useState('');
+  const [openPreview, setOpenPreview] = useState(false);
   const [analytics, setAnalytics] = useState({
     positive: 0,
     private: 0,
@@ -409,13 +411,11 @@ const DashboardPage = () => {
     setIsDirty(true); // কোনো চেঞ্জ হলে true
   };
 
+  
   // Preview Handler
-  const handlePreviewClick = () => {
-    if (isDirty) {
-      showMessage('You have unsaved changes. Please save before previewing!');
-      return;
-    }
-    window.open(reviewLink, '_blank');
+  const handlePreviewClick = (e) => {
+    e.preventDefault();
+    setOpenPreview(true);
   };
 
   const ToggleSwitch = ({ label, isChecked, onToggle }) => (
@@ -547,12 +547,18 @@ const DashboardPage = () => {
                   <span className="inline-flex items-center px-3 text-sm text-gray-400 bg-gray-700 border border-r-0 border-gray-600 rounded-l-lg">
                     hii5.io/
                   </span>
-                  <input
+                 <input
                     type="text"
                     value={slug}
-                    readOnly
-                    className="block w-full bg-gray-700 border border-gray-600 rounded-r-lg p-3 text-sm font-mono text-pink-400 cursor-not-allowed"
-                  />
+                    onChange={(e) => {
+                        let value = e.target.value;
+                        value = value.replace(/\s+/g, "-");
+                        value = value.replace(/[^a-zA-Z0-9-]/g, "");
+                        setSlug(value);
+                    }}
+                    className="block w-full bg-gray-700 border border-gray-600 rounded-r-lg p-3 text-sm font-mono text-pink-400"
+                    />
+
                 </div>
               </div>
               <button
@@ -621,12 +627,21 @@ const DashboardPage = () => {
             </div>
 
             {/* Save Button */}
+            <div className="flex items-center gap-5">
+
+            <button
+              onClick={handlePreviewClick}
+              className="relative inline-block rounded-full p-[3px] bg-pink-500 w-full text-center px-5 py-3 cursor-pointer"
+            >
+              Preview
+            </button>
             <button
               type="submit"
               className="relative inline-block rounded-full p-[3px] bg-pink-500 w-full text-center px-5 py-3 cursor-pointer"
             >
               Save Settings
             </button>
+            </div>
           </form>
 
           <div className="bg-gray-800 p-6 rounded-2xl space-y-5 shadow-2xl border border-gray-700">
@@ -771,6 +786,26 @@ const DashboardPage = () => {
 
           <UpgradeCard />
         </div>
+        {openPreview && (
+            <PreviewPage 
+                modalOpen={openPreview}
+                setModalOpen={() => setOpenPreview(false)}
+                slug={slug}
+logoName={logoName}
+logoUrl={logoUrl}
+googleURL={googleURL}
+yelpURL={yelpURL}
+brandColor={brandColor}
+reviewLink={reviewLink}
+openPreview={openPreview}
+analytics={analytics}
+             />
+        )}
+          {/* <PreviewModal
+            onClose={() => setOpenPreview(false)}
+            headline={headline}
+            subtext={subtext}
+          /> */}
       </main>
     </div>
   );
