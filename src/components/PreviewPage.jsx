@@ -37,47 +37,7 @@ subtext = "Your feedback helps us grow",
   const handleHighRating = async () => {
     if (isLoading) return;
 
-    setIsLoading(true);
 
-    try {
-      const { data, error } = await supabase
-        .from('reviews')
-        .insert([
-          {
-            rating,
-            full_name: fullName.trim() || userData?.name || '',
-            review_text: review.trim() || '',
-            company_id: business.id,
-            user_id: userData?.id || null,
-            user_email: userData?.email || null,
-          },
-        ])
-        .select()
-        .maybeSingle();
-
-        
-
-      if (error) throw error;
-      if (!data || data.length === 0) throw new Error('Insert failed');
-
-    //   window.open(business?.google_url || business?.yelp_url, '_blank');
-      window.open(business?.google_url || business?.yelp_url);
-
-      toast.success('Rating saved successfully!');
-      setSubmitted(true);
-
-      setTimeout(() => {
-        setRating(0);
-        setFullName('');
-        setReview('');
-        setSubmitted(false);
-      }, 3000);
-    } catch (err) {
-      console.error('High rating save error:', err);
-      toast.error('Failed to save rating');
-    } finally {
-      setIsLoading(false);
-    }
   };
 
 console.log({
@@ -180,7 +140,7 @@ analytics,
                 <button
                   onClick={handleSubmit}
                   className="w-full py-3 rounded-lg text-white font-medium"
-                  style={{ backgroundColor: business?.brandColor }}
+                  style={{ backgroundColor: brandColor }}
                   disabled={isLoading}
                 >
                   {isLoading ? "Submitting..." : "Submit Feedback"}
